@@ -138,19 +138,7 @@ services:
     container_name: xai_celery_worker
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/${POSTGRES_DB:-xai_system}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
-      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
-      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
-      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    volumes:
-      - ./backend:/app
-      - ./backend/data:/app/data
-      - ./backend/logs:/app/logs
-      - ./ml_models:/app/ml_models
-    "
+    
 
 
 
