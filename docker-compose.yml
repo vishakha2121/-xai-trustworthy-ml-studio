@@ -417,10 +417,3 @@ volumes:
   pgadmin_data:
     driver: local
 
-# ============================================
-# Networks
-# ============================================
-networks:
-  xai_network:
-    driver: bridge
-    name: xai_network
