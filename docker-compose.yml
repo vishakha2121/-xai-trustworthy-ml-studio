@@ -322,17 +322,7 @@ services:
     restart: unless-stopped
     ports:
       - "9090:9090"
-    volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    networks:
-      - xai_network
-    command: --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+   
 
   
 
