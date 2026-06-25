@@ -220,19 +220,7 @@ services:
       - /app/node_modules
       - ./frontend/public:/app/public
       - ./frontend/src:/app/src
-    depends_on:
-      backend:
-        condition: service_started
-    networks:
-      - xai_network
-    command: npm start
-    stdin_open: true
-    tty: true
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    
 
 
    
