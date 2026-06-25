@@ -381,24 +381,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ============================================
-  # PHPMyAdmin (MySQL Alternative - Optional)
-  # ============================================
-  # Uncomment if using MySQL instead of PostgreSQL
-  # phpmyadmin:
-  #   image: phpmyadmin/phpmyadmin:latest
-  #   container_name: xai_phpmyadmin
-  #   restart: unless-stopped
-  #   environment:
-  #     PMA_HOST: mysql
-  #     PMA_PORT: 3306
-  #     UPLOAD_LIMIT: 100M
-  #   ports:
-  #     - "8080:80"
-  #   depends_on:
-  #     - mysql
-  #   networks:
-  #     - xai_network
+
 
 
 
