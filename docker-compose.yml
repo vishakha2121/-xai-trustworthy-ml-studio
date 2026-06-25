@@ -400,20 +400,5 @@ services:
   #   networks:
   #     - xai_network
 
-# ============================================
-# Volumes (Persistent Data Storage)
-# ============================================
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  mlflow_data:
-    driver: local
-  grafana_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  pgadmin_data:
-    driver: local
+
 
