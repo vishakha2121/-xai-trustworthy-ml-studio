@@ -89,9 +89,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       
-      # CORS
-      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://frontend:3000
-      
+    
     
   
       
