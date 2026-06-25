@@ -357,30 +357,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ============================================
-  # PGAdmin (Database Management - Optional)
-  # ============================================
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: xai_pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - postgres
-    networks:
-      - xai_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
+ 
 
 
 
