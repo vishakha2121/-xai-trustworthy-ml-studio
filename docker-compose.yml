@@ -208,18 +208,7 @@ services:
       dockerfile: Dockerfile
     container_name: xai_frontend
     restart: unless-stopped
-    environment:
-      REACT_APP_API_URL: http://localhost:8000/api
-      REACT_APP_WS_URL: ws://localhost:8000/ws
-      REACT_APP_GEMINI_API_KEY: ${GEMINI_API_KEY}
-      REACT_APP_ENVIRONMENT: development
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - ./frontend/public:/app/public
-      - ./frontend/src:/app/src
+  
     
 
 
