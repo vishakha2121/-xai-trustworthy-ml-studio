@@ -107,19 +107,7 @@ services:
       SHAP_USE_CACHE: true
       LIME_USE_CACHE: true
       
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - ./backend/data:/app/data
-      - ./backend/logs:/app/logs
-      - ./ml_models:/app/ml_models
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    "3"
+
 
   
 
