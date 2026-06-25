@@ -33,25 +33,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ============================================
-  # Redis Cache Service
-  # ============================================
-  redis:
-    image: redis:7-alpine
-    container_name: xai_redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - xai_network
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password}
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-
+  
     
     
   
