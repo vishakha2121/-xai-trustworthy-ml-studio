@@ -290,17 +290,7 @@ services:
   # ============================================
   # Grafana Monitoring Service
   # ============================================
-  grafana:
-    image: grafana/grafana:latest
-    container_name: xai_grafana
-    restart: unless-stopped
-    ports:
-      - "3001:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
-      GF_INSTALL_PLUGINS: grafana-piechart-panel
-   
+  
 
   
 
