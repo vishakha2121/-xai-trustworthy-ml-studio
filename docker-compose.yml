@@ -4,23 +4,7 @@ services:
   # ============================================
   # PostgreSQL Database Service
   # ============================================
-  postgres:
-    image: postgres:15-alpine
-    container_name: xai_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-xai_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xai_password}
-      POSTGRES_DB: ${POSTGRES_DB:-xai_system}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./database/migrations:/docker-entrypoint-initdb.d/migrations
-      - ./database/seeds:/docker-entrypoint-initdb.d/seeds
-  
+ 
   
     
     
