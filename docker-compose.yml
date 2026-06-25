@@ -61,19 +61,7 @@ services:
   # ============================================
   # Backend API Service
   # ============================================
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: xai_backend
-    restart: unless-stopped
-    environment:
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/${POSTGRES_DB:-xai_system}
-      
-      # Redis
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
-  
+
     
     
   
