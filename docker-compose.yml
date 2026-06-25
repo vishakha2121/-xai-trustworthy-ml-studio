@@ -185,19 +185,7 @@ services:
       - ./backend/logs:/app/logs
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      celery_worker:
-        condition: service_started
-    networks:
-      - xai_network
-    command: celery -A app.tasks.celery beat --loglevel=info
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+     
 
   
     
