@@ -150,21 +150,7 @@ services:
       - ./backend/data:/app/data
       - ./backend/logs:/app/logs
       - ./ml_models:/app/ml_models
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_started
-    networks:
-      - xai_network
-    command: celery -A app.tasks.celery worker --loglevel=info
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    "
 
 
 
