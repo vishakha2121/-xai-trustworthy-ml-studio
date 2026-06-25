@@ -169,22 +169,7 @@ services:
   # ============================================
   # Celery Beat Service (Scheduled Tasks)
   # ============================================
-  celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: xai_celery_beat
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/${POSTGRES_DB:-xai_system}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
-      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
-      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
-    volumes:
-      - ./backend:/app
-      - ./backend/logs:/app/logs
-    depends_on:
-      postgres:
+ 
      
 
   
