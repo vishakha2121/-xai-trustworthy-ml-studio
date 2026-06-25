@@ -334,28 +334,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ============================================
-  # Jupyter Notebook Service (Optional)
-  # ============================================
-  jupyter:
-    image: jupyter/datascience-notebook:latest
-    container_name: xai_jupyter
-    restart: unless-stopped
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./ml_models/notebooks:/home/jovyan/work
-      - ./backend/data:/home/jovyan/data
-    environment:
-      JUPYTER_ENABLE_LAB: yes
-    networks:
-      - xai_network
-    command: start-notebook.sh --NotebookApp.token=''
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+  
 
  
 
