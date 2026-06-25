@@ -1,0 +1,426 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL Database Service
+  # ============================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: xai_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-xai_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xai_password}
+      POSTGRES_DB: ${POSTGRES_DB:-xai_system}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/migrations:/docker-entrypoint-initdb.d/migrations
+      - ./database/seeds:/docker-entrypoint-initdb.d/seeds
+    networks:
+      - xai_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xai_user} -d ${POSTGRES_DB:-xai_system}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Redis Cache Service
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: xai_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - xai_network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Backend API Service
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xai_backend
+    restart: unless-stopped
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/${POSTGRES_DB:-xai_system}
+      
+      # Redis
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      
+      # API
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      
+      # Model
+      MODEL_PATH: ./data/models/
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      
+      # External APIs
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # CORS
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://frontend:3000
+      
+      # Logging
+      LOG_LEVEL: INFO
+      LOG_FILE: ./logs/app.log
+      
+      # Environment
+      ENVIRONMENT: development
+      
+      # Celery
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
+      
+      # XAI
+      SHAP_USE_CACHE: true
+      LIME_USE_CACHE: true
+      
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+      - ./ml_models:/app/ml_models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - xai_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Celery Worker Service (Async Tasks)
+  # ============================================
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xai_celery_worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/${POSTGRES_DB:-xai_system}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+      - ./ml_models:/app/ml_models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - xai_network
+    command: celery -A app.tasks.celery worker --loglevel=info
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Celery Beat Service (Scheduled Tasks)
+  # ============================================
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xai_celery_beat
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/${POSTGRES_DB:-xai_system}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
+    volumes:
+      - ./backend:/app
+      - ./backend/logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      celery_worker:
+        condition: service_started
+    networks:
+      - xai_network
+    command: celery -A app.tasks.celery beat --loglevel=info
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Frontend React Service
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: xai_frontend
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: http://localhost:8000/api
+      REACT_APP_WS_URL: ws://localhost:8000/ws
+      REACT_APP_GEMINI_API_KEY: ${GEMINI_API_KEY}
+      REACT_APP_ENVIRONMENT: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./frontend/public:/app/public
+      - ./frontend/src:/app/src
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - xai_network
+    command: npm start
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Nginx Reverse Proxy Service
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: xai_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/build:/usr/share/nginx/html
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - xai_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # MLflow Tracking Service
+  # ============================================
+  mlflow:
+    image: mlflow/mlflow:latest
+    container_name: xai_mlflow
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ml_models:/mlflow
+      - mlflow_data:/mlflow/data
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/mlflow_db
+      MLFLOW_ARTIFACT_ROOT: /mlflow/artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - xai_network
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://${POSTGRES_USER:-xai_user}:${POSTGRES_PASSWORD:-xai_password}@postgres:5432/mlflow_db --default-artifact-root /mlflow/artifacts
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Grafana Monitoring Service
+  # ============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: xai_grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - xai_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Prometheus Monitoring Service
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: xai_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - xai_network
+    command: --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Jupyter Notebook Service (Optional)
+  # ============================================
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    container_name: xai_jupyter
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./ml_models/notebooks:/home/jovyan/work
+      - ./backend/data:/home/jovyan/data
+    environment:
+      JUPYTER_ENABLE_LAB: yes
+    networks:
+      - xai_network
+    command: start-notebook.sh --NotebookApp.token=''
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # PGAdmin (Database Management - Optional)
+  # ============================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: xai_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - xai_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # PHPMyAdmin (MySQL Alternative - Optional)
+  # ============================================
+  # Uncomment if using MySQL instead of PostgreSQL
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin:latest
+  #   container_name: xai_phpmyadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     PMA_HOST: mysql
+  #     PMA_PORT: 3306
+  #     UPLOAD_LIMIT: 100M
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - mysql
+  #   networks:
+  #     - xai_network
+
+# ============================================
+# Volumes (Persistent Data Storage)
+# ============================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  mlflow_data:
+    driver: local
+  grafana_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  xai_network:
+    driver: bridge
+    name: xai_network
