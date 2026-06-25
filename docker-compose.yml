@@ -128,17 +128,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ============================================
-  # Celery Worker Service (Async Tasks)
-  # ============================================
-  celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: xai_celery_worker
-    restart: unless-stopped
-    environment:
-    
+  
 
 
 
