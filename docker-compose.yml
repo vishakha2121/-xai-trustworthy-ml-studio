@@ -85,10 +85,6 @@ services:
       MODEL_PATH: ./data/models/
       MLFLOW_TRACKING_URI: http://mlflow:5000
       
-      # External APIs
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
     
     
   
