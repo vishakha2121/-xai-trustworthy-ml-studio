@@ -20,19 +20,7 @@ services:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./database/migrations:/docker-entrypoint-initdb.d/migrations
       - ./database/seeds:/docker-entrypoint-initdb.d/seeds
-    networks:
-      - xai_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xai_user} -d ${POSTGRES_DB:-xai_system}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
+  
   
     
     
