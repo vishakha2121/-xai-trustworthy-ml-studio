@@ -259,19 +259,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ============================================
-  # MLflow Tracking Service
-  # ============================================
-  mlflow:
-    image: mlflow/mlflow:latest
-    container_name: xai_mlflow
-    restart: unless-stopped
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./ml_models:/mlflow
-      - mlflow_data:/mlflow/data
-    environment:
+
    
 
 
