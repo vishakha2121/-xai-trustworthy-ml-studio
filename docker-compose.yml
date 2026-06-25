@@ -199,15 +199,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ============================================
-  # Frontend React Service
-  # ============================================
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: xai_frontend
-    restart: unless-stopped
   
     
 
